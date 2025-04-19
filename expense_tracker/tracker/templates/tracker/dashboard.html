@@ -1,0 +1,107 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-9">
+                <h2 class="mb-3">Dashboard</h2>
+                <p>Total Spent: ₹{{ total }}</p>
+
+                {% if section == 'add' %}
+                    <!-- Add Expense Form -->
+                    <div class="card">
+                        <div class="card-header">Add Expense</div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'add_expense' %}">
+                                {% csrf_token %}
+                                {{ form.as_p }}
+                                <button type="submit" class="btn btn-success">Add</button>
+                            </form>
+                        </div>
+                    </div>
+
+                {% elif section == 'edit' and edit_form %}
+                    <!-- Edit Expense Form -->
+                    <div class="card">
+                        <div class="card-header">Edit Expense</div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'edit_expense' edit_id %}">
+                                {% csrf_token %}
+                                {{ edit_form.as_p }}
+                                <button type="submit" class="btn btn-primary">Update</button>
+                            </form>
+                        </div>
+                    </div>
+
+                {% elif section == 'chart' %}
+                    <!-- Chart Section -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Expense Distribution</h5>
+                            <canvas id="expenseChart" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart.js CDN -->
+                    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                    <script>
+                        const ctx = document.getElementById('expenseChart').getContext('2d');
+                        const expenseChart = new Chart(ctx, {
+                            type: 'pie',
+                            data: {
+                                labels: {{ categories|safe }},
+                                datasets: [{
+                                    label: 'Expense by Category',
+                                    data: {{ amounts|safe }},
+                                    backgroundColor: [
+                                        '#007bff', '#28a745', '#ffc107', '#dc3545',
+                                        '#17a2b8', '#6610f2', '#fd7e14'
+                                    ],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { position: 'right' },
+                                    title: {
+                                        display: true,
+                                        text: 'Expenses by Category'
+                                    }
+                                }
+                            }
+                        });
+                    </script>
+
+                {% else %}
+                    <!-- Default Dashboard Table View -->
+                    <table class="table table-bordered table-striped">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Title</th>
+                                <th>Amount</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for exp in expenses %}
+                            <tr>
+                                <td>{{ exp.title }}</td>
+                                <td>₹{{ exp.amount }}</td>
+                                <td>{{ exp.category }}</td>
+                                <td>{{ exp.date }}</td>
+                                <td>
+                                    <a href="{% url 'dashboard' %}?section=edit&edit_id={{ exp.id }}" class="btn btn-warning btn-sm">Edit</a>
+                                    <a href="{% url 'delete_expense' exp.id %}" class="btn btn-danger btn-sm">Delete</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
